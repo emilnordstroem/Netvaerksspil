@@ -20,8 +20,8 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.*;
 
 public class GUI extends Application {
-	private static String host;
-	private static int port;
+	private static String host = "localhost";
+	private static int port = 10_000;
 	private static Socket clientSocket;
 	private static DataOutputStream outToServer;
 	private static BufferedReader inFromPlayer;
@@ -74,8 +74,6 @@ public class GUI extends Application {
 	@Override
 	public void start(Stage primaryStage) {
         try {
-			host = "localhost";
-			port = 10_000;
 			clientSocket = new Socket(host, port);
 			outToServer = new DataOutputStream(
 					clientSocket.getOutputStream()
@@ -135,10 +133,23 @@ public class GUI extends Application {
 
 			scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
 				switch (event.getCode()) {
-				case UP:    playerMoved(0,-1,"up");    break;
-				case DOWN:  playerMoved(0,+1,"down");  break;
-				case LEFT:  playerMoved(-1,0,"left");  break;
-				case RIGHT: playerMoved(+1,0,"right"); break;
+					// Concept:
+					// eventListener på key pressed (fortæller server move)
+					// bevæger sig kun ved server message (instruktion)
+					// formel for besked: player, move, x-move, y-move
+					// direction refere til billede - brug move.tolowercase()
+				case UP:
+					playerMoved(0,-1,"up");
+					break;
+				case DOWN:
+					playerMoved(0,+1,"down");
+					break;
+				case LEFT:
+					playerMoved(-1,0,"left");
+					break;
+				case RIGHT:
+					playerMoved(+1,0,"right");
+					break;
 				default: break;
 				}
 			});
