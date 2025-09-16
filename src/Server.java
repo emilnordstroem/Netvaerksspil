@@ -6,6 +6,19 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 
+/*Serverens opgaver
+    Holde en liste over Player-objekter (én pr. klient).
+    Når en klient sender "MOVE:UP", skal serveren:
+    Slå op hvilken Player der hører til socket’en.
+    Tjekke om træk er lovligt (rammer væg? rammer anden spiller?).
+    Opdatere koordinater og point.
+    Broadcaste en besked til alle klienter: fx "UPDATE:Orville:10:4:up:123" (navn, xpos, ypos, direction, points).
+
+2. Klientens opgaver
+    Når spilleren trykker på piletasten: send "MOVE:UP" til serveren.
+    Ikke selv flytte sin spiller lokalt.
+    Når klienten modtager "UPDATE:..." besked fra serveren, opdaterer den GUI.*/
+
 public class Server {
     private static ServerSocket welcomeSocket;
     private static HashMap<Socket, DataOutputStream> clientSockets;
