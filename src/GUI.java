@@ -1,5 +1,11 @@
 
 
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +20,11 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.*;
 
 public class GUI extends Application {
+	private static String host;
+	private static int port;
+	private static Socket clientSocket;
+	private static DataOutputStream outToServer;
+	private static BufferedReader inFromPlayer;
 
 	public static final int size = 20; 
 	public static final int scene_height = size * 20 + 100;
@@ -62,7 +73,17 @@ public class GUI extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
-		try {
+        try {
+			host = "localhost";
+			port = 10_000;
+			clientSocket = new Socket(host, port);
+			outToServer = new DataOutputStream(
+					clientSocket.getOutputStream()
+			);
+			inFromPlayer = new BufferedReader(
+					new InputStreamReader(System.in)
+			);
+
 			GridPane grid = new GridPane();
 			grid.setHgap(10);
 			grid.setVgap(10);
@@ -70,12 +91,12 @@ public class GUI extends Application {
 
 			Text mazeLabel = new Text("Maze:");
 			mazeLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
-	
+
 			Text scoreLabel = new Text("Score:");
 			scoreLabel.setFont(Font.font("Arial", FontWeight.BOLD, 20));
 
 			scoreList = new TextArea();
-			
+
 			GridPane boardGrid = new GridPane();
 
 			image_wall  = new Image(getClass().getResourceAsStream("Image/wall4.png"),size,size,false,false);
@@ -93,7 +114,7 @@ public class GUI extends Application {
 					case 'w':
 						fields[i][j] = new Label("", new ImageView(image_wall));
 						break;
-					case ' ':					
+					case ' ':
 						fields[i][j] = new Label("", new ImageView(image_floor));
 						break;
 					default: throw new Exception("Illegal field value: "+board[j].charAt(i) );
@@ -102,13 +123,12 @@ public class GUI extends Application {
 				}
 			}
 			scoreList.setEditable(false);
-			
-			
-			grid.add(mazeLabel,  0, 0); 
-			grid.add(scoreLabel, 1, 0); 
+
+			grid.add(mazeLabel,  0, 0);
+			grid.add(scoreLabel, 1, 0);
 			grid.add(boardGrid,  0, 1);
 			grid.add(scoreList,  1, 1);
-						
+
 			Scene scene = new Scene(grid,scene_width,scene_height);
 			primaryStage.setScene(scene);
 			primaryStage.show();
@@ -137,6 +157,10 @@ public class GUI extends Application {
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void writeToServer () {
+
 	}
 
 	public void playerMoved(int delta_x, int delta_y, String direction) {

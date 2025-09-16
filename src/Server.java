@@ -38,10 +38,6 @@ public class Server {
                 );
                 String messageFromClient = inFromClient.readLine();
                 System.out.println("received from client: " + messageFromClient);
-                if (messageFromClient.toLowerCase().contains("disconnect")) {
-                    clientSockets.remove(connectionSocket);
-                    messageFromClient = "[" + connectionSocket.getInetAddress() + " has left the server]";
-                }
                 writeToClients(messageFromClient);
             } catch (IOException e) {
                 throw new RuntimeException(e);
