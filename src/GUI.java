@@ -19,6 +19,8 @@ import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.text.*;
 
+import javafx.application.Platform;
+
 public class GUI extends Application {
 	private static String host = "localhost";
 	private static int port = 10_000;
@@ -95,7 +97,6 @@ public class GUI extends Application {
 
 		// Setting up standard players
 		settingUpStandardPlayers();
-
 	}
 
 	private void etablishTCPConnection () {
@@ -182,20 +183,20 @@ public class GUI extends Application {
 				// formel for besked: player, move, x-move, y-move
 				// direction refere til billede - brug move.tolowercase()
 				case UP:
-					writeToServer("move up");
-					playerMoved(0,-1,"up");
+					writeToServer("move 0 -1 up");
+//					playerMoved(0,-1,"up");
 					break;
 				case DOWN:
-					writeToServer("move down");
-					playerMoved(0,+1,"down");
+					writeToServer("move 0 +1 down");
+//					playerMoved(0,+1,"down");
 					break;
 				case LEFT:
-					writeToServer("move left");
-					playerMoved(-1,0,"left");
+					writeToServer("move -1 0 left");
+//					playerMoved(-1,0,"left");
 					break;
 				case RIGHT:
-					writeToServer("move right");
-					playerMoved(+1,0,"right");
+					writeToServer("move +1 0 right");
+//					playerMoved(+1,0,"right");
 					break;
 				default: break;
 			}
@@ -215,6 +216,21 @@ public class GUI extends Application {
 			try {
 				String messageFromServer = inFromServer.readLine();
 				System.out.println("received by server: " + messageFromServer);
+				String[] messageFormat = messageFromServer.trim().split(" ");
+				if (messageFormat[0].equals("move")) {
+					int xMove = Integer.parseInt(messageFormat[1]);
+					int yMove = Integer.parseInt(messageFormat[2]);
+					String direction = messageFormat[3];
+
+					// Thread overreach fix with Platform.runLater()
+					// Background thread
+					Platform.runLater(() -> {
+						playerMoved(
+								xMove,
+								yMove,
+								direction);
+					});
+				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
