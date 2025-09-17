@@ -28,6 +28,18 @@ public class Server {
 
     }
 
+    private static void enableDataOutputFromClient(Socket connectionSocket) {
+        try {
+            DataOutputStream outputStream = new DataOutputStream(
+                    connectionSocket.getOutputStream()
+            );
+            System.out.println("[client connected to Server from IP: " + connectionSocket.getInetAddress() + "]");
+            clientSockets.put(connectionSocket, outputStream);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static void readFromClient(Socket connectionSocket){
         while (true) {
             try {
@@ -49,24 +61,12 @@ public class Server {
         String messageToClients = messageFromClient.trim();
         clientSockets.forEach((socket, outputStream) -> {
             try {
-                System.out.println("message send by: " + socket.getInetAddress());
+                System.out.println("message forwarded to: " + socket.getInetAddress());
                 outputStream.writeBytes(messageToClients + '\n');
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private static void enableDataOutputFromClient(Socket connectionSocket) {
-        try {
-            DataOutputStream outputStream = new DataOutputStream(
-                    connectionSocket.getOutputStream()
-            );
-            System.out.println("[client connected to Server from IP: " + connectionSocket.getInetAddress() + "]");
-            clientSockets.put(connectionSocket, outputStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

@@ -24,7 +24,7 @@ public class GUI extends Application {
 	private static int port = 10_000;
 	private static Socket clientSocket;
 	private static DataOutputStream outToServer;
-	private static BufferedReader inFromPlayer;
+	private static BufferedReader inFromServer;
 
 	public static final int size = 20; 
 	public static final int scene_height = size * 20 + 100;
@@ -89,6 +89,9 @@ public class GUI extends Application {
 
 		// handle key presses
 		handleKeyPress(scene);
+		// handle incoming instructions
+		Thread readThread = new Thread(() -> readFromServer());
+		readThread.start();
 
 		// Setting up standard players
 		settingUpStandardPlayers();
@@ -101,8 +104,10 @@ public class GUI extends Application {
 			outToServer = new DataOutputStream(
 					clientSocket.getOutputStream()
 			);
-			inFromPlayer = new BufferedReader(
-					new InputStreamReader(System.in)
+			inFromServer = new BufferedReader(
+					new InputStreamReader(
+							clientSocket.getInputStream()
+					)
 			);
 		} catch (UnknownHostException e) {
             throw new RuntimeException(e);
@@ -177,20 +182,43 @@ public class GUI extends Application {
 				// formel for besked: player, move, x-move, y-move
 				// direction refere til billede - brug move.tolowercase()
 				case UP:
+					writeToServer("move up");
 					playerMoved(0,-1,"up");
 					break;
 				case DOWN:
+					writeToServer("move down");
 					playerMoved(0,+1,"down");
 					break;
 				case LEFT:
+					writeToServer("move left");
 					playerMoved(-1,0,"left");
 					break;
 				case RIGHT:
+					writeToServer("move right");
 					playerMoved(+1,0,"right");
 					break;
 				default: break;
 			}
 		});
+	}
+
+	private void writeToServer(String messageToServer){
+		try {
+			outToServer.writeBytes(messageToServer + '\n');
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	private void readFromServer(){
+		while (true) {
+			try {
+				String messageFromServer = inFromServer.readLine();
+				System.out.println("received by server: " + messageFromServer);
+			} catch (IOException e) {
+				throw new RuntimeException(e);
+			}
+		}
 	}
 
 	private void settingUpStandardPlayers () {
@@ -203,14 +231,8 @@ public class GUI extends Application {
 		fields[14][15].setGraphic(new ImageView(hero_up));
 	}
 
-	private void writeToServer () {
 
-	}
-
-	private void readFromServer(){
-
-	}
-
+	// Game Mechanics
 	public void playerMoved(int delta_x, int delta_y, String direction) {
 		me.direction = direction;
 		int x = me.getXpos(),y = me.getYpos();
