@@ -35,7 +35,7 @@ public class GUI extends Application {
 	public static Image hero_right,hero_left,hero_up,hero_down;
 
 	public static Player me;
-	public static List<Player> players = new ArrayList<Player>();
+	public static List<Player> players = new ArrayList<>();
 
 	private Label[][] fields;
 	private TextArea scoreList;
@@ -230,7 +230,6 @@ public class GUI extends Application {
 		players.add(harry);
 		fields[14][15].setGraphic(new ImageView(hero_up));
 	}
-
 
 	// Game Mechanics
 	public void playerMoved(int delta_x, int delta_y, String direction) {
