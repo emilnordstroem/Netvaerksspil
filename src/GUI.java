@@ -96,7 +96,7 @@ public class GUI extends Application {
 		readThread.start();
 
 		// Setting up standard players
-		settingUpStandardPlayers();
+//		settingUpStandardPlayers();
 	}
 
 	private void etablishTCPConnection () {
@@ -228,8 +228,24 @@ public class GUI extends Application {
 						playerMoved(
 								xMove,
 								yMove,
-								direction);
+								direction
+						);
 					});
+				} else if (messageFormat[0].equals("add_player")) {
+					String playerName = messageFormat[1];
+					int xPosition = Integer.parseInt(messageFormat[2]);
+					int yPosition = Integer.parseInt(messageFormat[3]);
+					String direction = messageFormat[4];
+
+					Platform.runLater(() -> {
+						settingUpNewPlayer(
+								playerName,
+								xPosition,
+								yPosition,
+								direction
+						);
+					});
+
 				}
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -237,14 +253,28 @@ public class GUI extends Application {
 		}
 	}
 
-	private void settingUpStandardPlayers () {
-		me = new Player("Orville",9,4,"up");
-		players.add(me);
-		fields[9][4].setGraphic(new ImageView(hero_up));
+//	private void settingUpStandardPlayers () {
+//		me = new Player("Orville",9,4,"up");
+//		players.add(me);
+//		fields[9][4].setGraphic(new ImageView(hero_up));
+//
+//		Player harry = new Player("Harry",14,15,"up");
+//		players.add(harry);
+//		fields[14][15].setGraphic(new ImageView(hero_up));
+//	}
 
-		Player harry = new Player("Harry",14,15,"up");
-		players.add(harry);
-		fields[14][15].setGraphic(new ImageView(hero_up));
+	private void settingUpNewPlayer(String name, int xPosition, int yPosition, String direction){
+		Player newPlayer =  new Player(
+				name,
+				xPosition,
+				yPosition,
+				direction
+		);
+		if (players.isEmpty()) {
+			me = newPlayer;
+		}
+		players.add(newPlayer);
+		fields[xPosition][yPosition].setGraphic(new ImageView(hero_up));
 	}
 
 	// Game Mechanics
