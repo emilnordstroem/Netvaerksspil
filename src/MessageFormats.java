@@ -1,10 +1,15 @@
 public class MessageFormats {
+    private Player player;
 
-    public static String moveMessage () {
+    public MessageFormats(Player player) {
+        this.player = player;
+    }
+
+    public String moveMessage () {
         return null;
     }
 
-    public static String pointMessage () {
+    public String pointMessage () {
         return null;
     }
 
