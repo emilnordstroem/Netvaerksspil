@@ -75,6 +75,9 @@ public class GUI extends Application {
 
 	@Override
 	public void start(Stage primaryStage) {
+		// Initiate game
+		initiateSetup();
+
 		// TCP connectionSetup
 		establishTCPConnection();
 
@@ -99,6 +102,18 @@ public class GUI extends Application {
 //		settingUpStandardPlayers();
 	}
 
+	private void initiateSetup(){
+		TextInputDialog dialogElement = new TextInputDialog();
+		dialogElement.setTitle("Welcome to the Maze");
+		dialogElement.setHeaderText("You need to take action on one matter before joining the game");
+		dialogElement.setContentText("Please enter a player name:");
+
+		// Wait until entered playername
+		String inputPlayerName = dialogElement.showAndWait().get();
+		// setup me player object
+		me = new Player(inputPlayerName, 9, 4, "up");
+	}
+
 	private void establishTCPConnection() {
 		try {
 			clientSocket = new Socket(host, port);
@@ -110,6 +125,12 @@ public class GUI extends Application {
 							clientSocket.getInputStream()
 					)
 			);
+			// send player object information
+			writeToServer(messageFormatter.addNewPlayerMessage(
+					me.name,
+					me.xpos,
+					me.ypos
+			));
 		} catch (UnknownHostException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -178,12 +199,11 @@ public class GUI extends Application {
 	// I/O component action
 	private void handleKeyPress(Scene scene){
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
+			if (me == null) {
+				// if there is no me object yet - ignore the press of keys
+				return;
+			}
 			switch (event.getCode()) {
-				// Concept:
-				// eventListener på key pressed (fortæller server move)
-				// bevæger sig kun ved server message (instruktion)
-				// formel for besked: player, move, x-move, y-move
-				// direction refere til billede - brug move.tolowercase()
 				case UP:
 					writeToServer(messageFormatter.movePlayerMessage(me.name, 0, -1, "up"));
 					break;
@@ -280,13 +300,22 @@ public class GUI extends Application {
 //	}
 
 	private void settingUpNewPlayer(String name, int xPosition, int yPosition, String direction){
+		for (Player player : players) {
+			if (player.name.equals(name)) { // already exists, just skip (avoid duplicates)
+				player.setXpos(xPosition);
+				player.setYpos(yPosition);
+				player.direction = direction;
+				return;
+			}
+		}
+
 		Player newPlayer =  new Player(
 				name,
 				xPosition,
 				yPosition,
 				direction
 		);
-		if (players.isEmpty()) {
+		if (name.equals(me.name)) {
 			me = newPlayer;
 		}
 		players.add(newPlayer);
