@@ -76,7 +76,7 @@ public class GUI extends Application {
 	@Override
 	public void start(Stage primaryStage) {
 		// TCP connectionSetup
-		etablishTCPConnection();
+		establishTCPConnection();
 
 		// GUI grid and board setup
 		GridPane grid = gridPaneSetup();
@@ -99,7 +99,7 @@ public class GUI extends Application {
 //		settingUpStandardPlayers();
 	}
 
-	private void etablishTCPConnection () {
+	private void establishTCPConnection() {
 		try {
 			clientSocket = new Socket(host, port);
 			outToServer = new DataOutputStream(
