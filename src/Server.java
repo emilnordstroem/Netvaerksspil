@@ -23,7 +23,6 @@ public class Server {
     private static ServerSocket welcomeSocket;
     private static HashMap<Socket, DataOutputStream> clientSockets;
 
-
     public static void main(String[] args) {
         try {
             welcomeSocket = new ServerSocket(10_000);
@@ -39,7 +38,6 @@ public class Server {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     private static void enableDataOutputFromClient(Socket connectionSocket) {
