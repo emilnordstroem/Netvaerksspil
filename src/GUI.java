@@ -1,5 +1,4 @@
 
-
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -36,6 +35,7 @@ public class GUI extends Application {
 	public static Image image_wall;
 	public static Image hero_right,hero_left,hero_up,hero_down;
 
+	private final MessageFormatter messageFormatter = new MessageFormatter();
 	public static Player me;
 	public static List<Player> players = new ArrayList<>();
 
@@ -117,6 +117,7 @@ public class GUI extends Application {
         }
     }
 
+	// Graphical user interface
 	private GridPane gridPaneSetup () {
 		GridPane grid = new GridPane();
 		grid.setHgap(10);
@@ -174,6 +175,7 @@ public class GUI extends Application {
 		return grid;
 	}
 
+	// I/O component action
 	private void handleKeyPress(Scene scene){
 		scene.addEventFilter(KeyEvent.KEY_PRESSED, event -> {
 			switch (event.getCode()) {
@@ -183,26 +185,23 @@ public class GUI extends Application {
 				// formel for besked: player, move, x-move, y-move
 				// direction refere til billede - brug move.tolowercase()
 				case UP:
-					writeToServer("move 0 -1 up");
-//					playerMoved(0,-1,"up");
+					writeToServer(messageFormatter.movePlayerMessage(me.name, 0, -1, "up"));
 					break;
 				case DOWN:
-					writeToServer("move 0 +1 down");
-//					playerMoved(0,+1,"down");
+					writeToServer(messageFormatter.movePlayerMessage(me.name, 0, +1, "down"));
 					break;
 				case LEFT:
-					writeToServer("move -1 0 left");
-//					playerMoved(-1,0,"left");
+					writeToServer(messageFormatter.movePlayerMessage(me.name, -1, 0, "left"));
 					break;
 				case RIGHT:
-					writeToServer("move +1 0 right");
-//					playerMoved(+1,0,"right");
+					writeToServer(messageFormatter.movePlayerMessage(me.name, +1, 0, "right"));
 					break;
 				default: break;
 			}
 		});
 	}
 
+	// Read/Write to central node (Server)
 	private void writeToServer(String messageToServer){
 		try {
 			outToServer.writeBytes(messageToServer + '\n');
@@ -216,37 +215,54 @@ public class GUI extends Application {
 			try {
 				String messageFromServer = inFromServer.readLine();
 				System.out.println("received by server: " + messageFromServer);
+
 				String[] messageFormat = messageFromServer.trim().split(" ");
-				if (messageFormat[0].equals("move")) {
-					int xMove = Integer.parseInt(messageFormat[1]);
-					int yMove = Integer.parseInt(messageFormat[2]);
-					String direction = messageFormat[3];
+				String messageType = messageFormat[0];
+				String playerName = messageFormat[1];
 
-					// Thread overreach fix with Platform.runLater()
-					// Background thread
-					Platform.runLater(() -> {
-						playerMoved(
-								xMove,
-								yMove,
-								direction
-						);
-					});
-				} else if (messageFormat[0].equals("add_player")) {
-					String playerName = messageFormat[1];
-					int xPosition = Integer.parseInt(messageFormat[2]);
-					int yPosition = Integer.parseInt(messageFormat[3]);
-					String direction = messageFormat[4];
+				switch (messageType) {
+					case "move_player":
+						int xDirectionMove = Integer.parseInt(messageFormat[2]);
+						int yDirectionMove = Integer.parseInt(messageFormat[3]);
+						String newDirection = messageFormat[4];
 
-					Platform.runLater(() -> {
-						settingUpNewPlayer(
-								playerName,
-								xPosition,
-								yPosition,
-								direction
-						);
-					});
+						// Thread overreach fix with Platform.runLater()
+						// Background thread
+						Platform.runLater(() -> {
+							playerMoved(
+									playerName,
+									xDirectionMove,
+									yDirectionMove,
+									newDirection
+							);
+						});
+						break;
+					case "add_player":
+						int xPosition = Integer.parseInt(messageFormat[2]);
+						int yPosition = Integer.parseInt(messageFormat[3]);
+						String direction = messageFormat[4];
 
+						Platform.runLater(() -> {
+							settingUpNewPlayer(
+									playerName,
+									xPosition,
+									yPosition,
+									direction
+							);
+						});
+						break;
+					case "update_player_points":
+						int pointChange = Integer.parseInt(messageFormat[2]);
+
+						Platform.runLater(() -> {
+							updatePlayerPoints(
+									playerName,
+									pointChange
+							);
+						});
+					default: break;
 				}
+
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
@@ -278,57 +294,91 @@ public class GUI extends Application {
 	}
 
 	// Game Mechanics
-	public void playerMoved(int delta_x, int delta_y, String direction) {
-		me.direction = direction;
-		int x = me.getXpos(),y = me.getYpos();
-
-		if (board[y+delta_y].charAt(x+delta_x)=='w') {
-			me.addPoints(-1);
+	public void playerMoved(String playerName, int delta_x, int delta_y, String direction) {
+		Player playerToMoved = null;
+		for (Player player : players) {
+			if (player.name.equals(playerName)) {
+				playerToMoved = player;
+			}
 		}
-		else {
-			Player p = getPlayerAt(x+delta_x,y+delta_y);
-			if (p!=null) {
-              me.addPoints(10);
-              p.addPoints(-10);
-			} else {
-				me.addPoints(1);
+		if (playerToMoved == null) {
+			return;
+		}
 
-				fields[x][y].setGraphic(new ImageView(image_floor));
-				x+=delta_x;
-				y+=delta_y;
+		playerToMoved.direction = direction;
+		int currentXPosition = playerToMoved.getXpos();
+		int currentYPosition = playerToMoved.getYpos();
+
+		if (board[currentYPosition + delta_y].charAt(currentXPosition + delta_x) == 'w') {
+			writeToServer(
+					messageFormatter.updatePlayerPoint(
+							playerName,
+							-1
+					)
+			);
+		} else {
+			Player playerAtNewPosition = getPlayerAt(currentXPosition + delta_x,currentYPosition + delta_y);
+			if (playerAtNewPosition != null) {
+				// This needs to be messages
+				playerToMoved.addPoints(10);
+				playerAtNewPosition.addPoints(-10);
+			} else {
+				// needs to be a message
+				writeToServer(
+						messageFormatter.updatePlayerPoint(
+								playerName,
+								1
+						)
+				);
+
+				fields[currentXPosition][currentYPosition].setGraphic(new ImageView(image_floor));
+				currentXPosition+=delta_x;
+				currentYPosition+=delta_y;
 
 				if (direction.equals("right")) {
-					fields[x][y].setGraphic(new ImageView(hero_right));
+					fields[currentXPosition][currentYPosition].setGraphic(new ImageView(hero_right));
 				};
 				if (direction.equals("left")) {
-					fields[x][y].setGraphic(new ImageView(hero_left));
+					fields[currentXPosition][currentYPosition].setGraphic(new ImageView(hero_left));
 				};
 				if (direction.equals("up")) {
-					fields[x][y].setGraphic(new ImageView(hero_up));
+					fields[currentXPosition][currentYPosition].setGraphic(new ImageView(hero_up));
 				};
 				if (direction.equals("down")) {
-					fields[x][y].setGraphic(new ImageView(hero_down));
+					fields[currentXPosition][currentYPosition].setGraphic(new ImageView(hero_down));
 				};
 
-				me.setXpos(x);
-				me.setYpos(y);
+				playerToMoved.setXpos(currentXPosition);
+				playerToMoved.setYpos(currentYPosition);
+			}
+		}
+
+        scoreList.setText(getScoreList());
+	}
+
+	public void updatePlayerPoints(String playerName, int point) {
+		for (Player player : players) {
+			if (player.name.equals(playerName)) {
+				player.addPoints(point);
 			}
 		}
 		scoreList.setText(getScoreList());
 	}
 
 	public String getScoreList() {
-		StringBuffer b = new StringBuffer(100);
-		for (Player p : players) {
-			b.append(p+"\r\n");
+		StringBuffer buffer = new StringBuffer(100);
+
+		for (Player player : players) {
+			buffer.append(player+"\r\n");
 		}
-		return b.toString();
+
+		return buffer.toString();
 	}
 
 	public Player getPlayerAt(int x, int y) {
-		for (Player p : players) {
-			if (p.getXpos()==x && p.getYpos()==y) {
-				return p;
+		for (Player player : players) {
+			if (player.getXpos() == x && player.getYpos() == y) {
+				return player;
 			}
 		}
 		return null;
