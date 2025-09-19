@@ -23,6 +23,7 @@ public class Server {
     private static ServerSocket welcomeSocket;
     private static HashMap<Socket, DataOutputStream> clientSockets;
 
+
     public static void main(String[] args) {
         try {
             welcomeSocket = new ServerSocket(10_000);
@@ -39,6 +40,20 @@ public class Server {
             throw new RuntimeException(e);
         }
 
+    }
+
+    private static void enableDataOutputFromClient(Socket connectionSocket) {
+        try {
+            DataOutputStream outputStream = new DataOutputStream(
+                    connectionSocket.getOutputStream()
+            );
+            System.out.println("[client connected to Server from IP: " + connectionSocket.getInetAddress() + "]");
+            clientSockets.put(connectionSocket, outputStream);
+
+            writeToClients("add_player Harry 9 4 up");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static void readFromClient(Socket connectionSocket){
@@ -62,24 +77,12 @@ public class Server {
         String messageToClients = messageFromClient.trim();
         clientSockets.forEach((socket, outputStream) -> {
             try {
-                System.out.println("message send by: " + socket.getInetAddress());
+                System.out.println("message forwarded to: " + socket.getInetAddress());
                 outputStream.writeBytes(messageToClients + '\n');
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         });
-    }
-
-    private static void enableDataOutputFromClient(Socket connectionSocket) {
-        try {
-            DataOutputStream outputStream = new DataOutputStream(
-                    connectionSocket.getOutputStream()
-            );
-            System.out.println("[client connected to Server from IP: " + connectionSocket.getInetAddress() + "]");
-            clientSockets.put(connectionSocket, outputStream);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }
