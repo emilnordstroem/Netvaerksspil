@@ -13,7 +13,7 @@ public class MessageFormatter {
 
     public String addPlayerMessage (String playerName, int currentXPosition, int currentYPosition, String currentPosition) {
         return String.format("add_player %s %d %d %s",
-                playerName,
+                playerName.trim().replace(" ", ""),
                 currentXPosition,
                 currentYPosition,
                 currentPosition
@@ -22,7 +22,7 @@ public class MessageFormatter {
 
     public String addNewPlayerMessage (String playerName, int defaultXPosition, int defaultYPosition) {
         return String.format("add_player %s %d %d up",
-                playerName,
+                playerName.trim().replace(" ", ""),
                 defaultXPosition,
                 defaultYPosition
         );

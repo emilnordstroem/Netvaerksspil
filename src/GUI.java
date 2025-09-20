@@ -289,16 +289,6 @@ public class GUI extends Application {
 		}
 	}
 
-//	private void settingUpStandardPlayers () {
-//		me = new Player("Orville",9,4,"up");
-//		players.add(me);
-//		fields[9][4].setGraphic(new ImageView(hero_up));
-//
-//		Player harry = new Player("Harry",14,15,"up");
-//		players.add(harry);
-//		fields[14][15].setGraphic(new ImageView(hero_up));
-//	}
-
 	private void settingUpNewPlayer(String name, int xPosition, int yPosition, String direction){
 		for (Player player : players) {
 			if (player.name.equals(name)) { // already exists, just skip (avoid duplicates)
@@ -361,8 +351,8 @@ public class GUI extends Application {
 				);
 
 				fields[currentXPosition][currentYPosition].setGraphic(new ImageView(image_floor));
-				currentXPosition+=delta_x;
-				currentYPosition+=delta_y;
+				currentXPosition += delta_x;
+				currentYPosition += delta_y;
 
 				if (direction.equals("right")) {
 					fields[currentXPosition][currentYPosition].setGraphic(new ImageView(hero_right));

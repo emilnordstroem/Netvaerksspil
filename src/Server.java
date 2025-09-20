@@ -6,13 +6,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 public class Server {
     private static ServerSocket welcomeSocket;
     private static final MessageFormatter messageFormatter = new MessageFormatter();
     private static Map<Socket, DataOutputStream> clientSockets;
-    private static Map<Socket, Player> players;
+    private static Map<String, Player> players;
 
     public static void main(String[] args) {
         try {
@@ -55,56 +54,50 @@ public class Server {
         }
     }
 
-    private static void readFromClient(Socket connectionSocket){
-        while (true) {
-            try {
-                BufferedReader inFromClient = new BufferedReader(
-                        new InputStreamReader(
-                                connectionSocket.getInputStream()
-                        )
-                );
+    private static void readFromClient(Socket connectionSocket) {
+        try {
+            BufferedReader inFromClient = new BufferedReader(
+                    new InputStreamReader(
+                            connectionSocket.getInputStream()
+                    )
+            );
+            while (true) {
                 String messageFromClient = inFromClient.readLine();
                 System.out.println("received from client: " + messageFromClient);
+
+                if (messageFromClient == null) {
+                    return;
+                }
 
                 String[] messageFormat = messageFromClient.trim().split(" ");
                 String messageType = messageFormat[0];
                 String playerName = messageFormat[1];
 
-                if (messageType.equals("add_player")) {
-                    int xPosition = Integer.parseInt(messageFormat[2]);
-                    int yPosition = Integer.parseInt(messageFormat[3]);
-                    String direction = messageFormat[4];
+                switch (messageType) {
+                    case "move_player" -> {
+                        int xDirectionMove = Integer.parseInt(messageFormat[2]);
+                        int yDirectionMove = Integer.parseInt(messageFormat[3]);
+                        String newDirection = messageFormat[4];
 
-                    // Construct new player and add to map
-                    Player newPlayer = new Player(
-                            playerName,
-                            xPosition,
-                            yPosition,
-                            direction
-                    );
-                    players.put(connectionSocket, newPlayer);
+                        updatePlayerPosition(playerName, xDirectionMove, yDirectionMove, newDirection);
+                    }
+                    case "add_player" -> {
+                        int xPosition = Integer.parseInt(messageFormat[2]);
+                        int yPosition = Integer.parseInt(messageFormat[3]);
+                        String direction = messageFormat[4];
+
+                        addNewPlayer(playerName, xPosition, yPosition, direction);
+                    }
+                    case "update_player_points" -> {
+                        int pointChange = Integer.parseInt(messageFormat[2]);
+                        updatePlayerPoints(playerName, pointChange);
+                    }
                 }
-
                 writeToAllClients(messageFromClient);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
             }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-    }
-
-    private static void writeToClientsExcept(Socket exception, String messageFromClient){
-        String messageToClients = messageFromClient.trim();
-        clientSockets.forEach((socket, outputStream) -> {
-            if (socket.equals(exception)) {
-                return;
-            }
-            try {
-                System.out.println("message forwarded to: " + socket.getInetAddress());
-                outputStream.writeBytes(messageToClients + '\n');
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        });
     }
 
     private static void writeToAllClients(String messageFromClient){
@@ -118,5 +111,39 @@ public class Server {
             }
         });
     }
+
+    // Player logic
+    private static void updatePlayerPosition (String playerName, int xDirectionMove, int yDirectionMove, String newDirection) {
+        players.forEach((currentPlayerName, player) -> {
+            if (currentPlayerName.equals(playerName)) {
+                player.setXpos(
+                        player.xpos += xDirectionMove
+                );
+                player.setYpos(
+                        player.ypos += yDirectionMove
+                );
+                player.setDirection(newDirection);
+            }
+        });
+    }
+
+    private static void addNewPlayer (String playerName, int xPosition, int yPosition, String direction) {
+        Player newPlayer = new Player(
+                playerName,
+                xPosition,
+                yPosition,
+                direction
+        );
+        players.put(playerName, newPlayer);
+    }
+
+    private static void updatePlayerPoints (String playerName, int pointChange) {
+        players.forEach((currentPlayerName, player) -> {
+            if (currentPlayerName.equals(playerName)) {
+                player.addPoints(pointChange);
+            }
+        });
+    }
+
 
 }
