@@ -1,10 +1,10 @@
+package client;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,6 +19,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.text.*;
 
 import javafx.application.Platform;
+import models.Player;
 
 public class GUI extends Application {
 	private static String host = "localhost";
@@ -26,6 +27,7 @@ public class GUI extends Application {
 	private static Socket clientSocket;
 	private static DataOutputStream outToServer;
 	private static BufferedReader inFromServer;
+	private static int localTimeStamp = 0;
 
 	public static final int size = 20; 
 	public static final int scene_height = size * 20 + 100;
@@ -81,7 +83,7 @@ public class GUI extends Application {
 		// TCP connectionSetup
 		establishTCPConnection();
 
-		// GUI grid and board setup
+		// client.GUI grid and board setup
 		GridPane grid = gridPaneSetup();
 
 		Scene scene = new Scene(
@@ -127,13 +129,11 @@ public class GUI extends Application {
 			);
 			// send player object information
 			writeToServer(messageFormatter.addNewPlayerMessage(
-					me.name,
-					me.xpos,
-					me.ypos
+					me.getName(),
+					me.getXpos(),
+					me.getYpos()
 			));
-		} catch (UnknownHostException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+		} catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -205,26 +205,33 @@ public class GUI extends Application {
 			}
 			switch (event.getCode()) {
 				case UP:
-					writeToServer(messageFormatter.movePlayerMessage(me.name, 0, -1, "up"));
+					writeToServer(messageFormatter.movePlayerMessage(me.getName(), 0, -1, "up"));
 					break;
 				case DOWN:
-					writeToServer(messageFormatter.movePlayerMessage(me.name, 0, +1, "down"));
+					writeToServer(messageFormatter.movePlayerMessage(me.getName(), 0, +1, "down"));
 					break;
 				case LEFT:
-					writeToServer(messageFormatter.movePlayerMessage(me.name, -1, 0, "left"));
+					writeToServer(messageFormatter.movePlayerMessage(me.getName(), -1, 0, "left"));
 					break;
 				case RIGHT:
-					writeToServer(messageFormatter.movePlayerMessage(me.name, +1, 0, "right"));
+					writeToServer(messageFormatter.movePlayerMessage(me.getName(), +1, 0, "right"));
 					break;
 				default: break;
 			}
 		});
 	}
 
-	// Read/Write to central node (Server)
+
 	private void writeToServer(String messageToServer){
 		try {
-			outToServer.writeBytes(messageToServer + '\n');
+			// increment local timestamp
+			localTimeStamp++;
+			// send message
+			String requestMessage = messageFormatter.requestMessage(
+					localTimeStamp,
+					messageToServer
+			);
+			outToServer.writeBytes(requestMessage + '\n');
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
@@ -235,16 +242,19 @@ public class GUI extends Application {
 			try {
 				String messageFromServer = inFromServer.readLine();
 				System.out.println("received by server: " + messageFromServer);
-
 				String[] messageFormat = messageFromServer.trim().split(" ");
-				String messageType = messageFormat[0];
-				String playerName = messageFormat[1];
+
+				int receivedTimeStamp = Integer.parseInt(messageFormat[1]);
+				updateLocalTimeStamp(receivedTimeStamp);
+
+				String messageType = messageFormat[2];
+				String playerName = messageFormat[3];
 
 				switch (messageType) {
 					case "move_player":
-						int xDirectionMove = Integer.parseInt(messageFormat[2]);
-						int yDirectionMove = Integer.parseInt(messageFormat[3]);
-						String newDirection = messageFormat[4];
+						int xDirectionMove = Integer.parseInt(messageFormat[4]);
+						int yDirectionMove = Integer.parseInt(messageFormat[5]);
+						String newDirection = messageFormat[6];
 
 						// Thread overreach fix with Platform.runLater()
 						// Background thread
@@ -258,9 +268,9 @@ public class GUI extends Application {
 						});
 						break;
 					case "add_player":
-						int xPosition = Integer.parseInt(messageFormat[2]);
-						int yPosition = Integer.parseInt(messageFormat[3]);
-						String direction = messageFormat[4];
+						int xPosition = Integer.parseInt(messageFormat[4]);
+						int yPosition = Integer.parseInt(messageFormat[5]);
+						String direction = messageFormat[6];
 
 						Platform.runLater(() -> {
 							settingUpNewPlayer(
@@ -272,7 +282,7 @@ public class GUI extends Application {
 						});
 						break;
 					case "update_player_points":
-						int pointChange = Integer.parseInt(messageFormat[2]);
+						int pointChange = Integer.parseInt(messageFormat[4]);
 
 						Platform.runLater(() -> {
 							updatePlayerPoints(
@@ -289,12 +299,16 @@ public class GUI extends Application {
 		}
 	}
 
+	private void updateLocalTimeStamp (int receivedTimeStamp) {
+		localTimeStamp = Math.max(localTimeStamp, receivedTimeStamp);
+	}
+
 	private void settingUpNewPlayer(String name, int xPosition, int yPosition, String direction){
 		for (Player player : players) {
-			if (player.name.equals(name)) { // already exists, just skip (avoid duplicates)
+			if (player.getName().equals(name)) { // already exists, just skip (avoid duplicates)
 				player.setXpos(xPosition);
 				player.setYpos(yPosition);
-				player.direction = direction;
+				player.setDirection(direction);
 				return;
 			}
 		}
@@ -305,7 +319,7 @@ public class GUI extends Application {
 				yPosition,
 				direction
 		);
-		if (name.equals(me.name)) {
+		if (name.equals(me.getName())) {
 			me = newPlayer;
 		}
 		players.add(newPlayer);
@@ -316,7 +330,7 @@ public class GUI extends Application {
 	public void playerMoved(String playerName, int delta_x, int delta_y, String direction) {
 		Player playerToMoved = null;
 		for (Player player : players) {
-			if (player.name.equals(playerName)) {
+			if (player.getName().equals(playerName)) {
 				playerToMoved = player;
 			}
 		}
@@ -324,7 +338,7 @@ public class GUI extends Application {
 			return;
 		}
 
-		playerToMoved.direction = direction;
+		playerToMoved.setDirection(direction);
 		int currentXPosition = playerToMoved.getXpos();
 		int currentYPosition = playerToMoved.getYpos();
 
@@ -377,7 +391,7 @@ public class GUI extends Application {
 
 	public void updatePlayerPoints(String playerName, int point) {
 		for (Player player : players) {
-			if (player.name.equals(playerName)) {
+			if (player.getName().equals(playerName)) {
 				player.addPoints(point);
 			}
 		}

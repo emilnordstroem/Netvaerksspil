@@ -1,6 +1,15 @@
+package client;
+
 public class MessageFormatter {
 
     public MessageFormatter() {}
+
+    public String requestMessage (int timeStamp, String message) {
+        return String.format("REQUEST %d %s",
+                timeStamp,
+                message
+        );
+    }
 
     public String movePlayerMessage (String playerName, int xDirectionMove, int yDirectionMove, String nextPosition) {
         return String.format("move_player %s %d %d %s",

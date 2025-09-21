@@ -1,3 +1,9 @@
+package server;
+
+import com.sun.net.httpserver.Request;
+import models.Player;
+import client.MessageFormatter;
+
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -6,18 +12,24 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Queue;
 
 public class Server {
     private static ServerSocket welcomeSocket;
     private static final MessageFormatter messageFormatter = new MessageFormatter();
     private static Map<Socket, DataOutputStream> clientSockets;
     private static Map<String, Player> players;
+    private static Queue<String> receivedRequestQueue;
+    private static int globalTimeStamp;
 
     public static void main(String[] args) {
         try {
             welcomeSocket = new ServerSocket(10_000);
             clientSockets = new HashMap<>();
             players = new HashMap<>();
+            receivedRequestQueue = createRequestQueue();
+            globalTimeStamp = 0;
 
             while (true) {
                 Socket connectionSocket = welcomeSocket.accept();
@@ -31,21 +43,37 @@ public class Server {
         }
     }
 
+    private static PriorityQueue<String> createRequestQueue () {
+        return new PriorityQueue<>((message1, message2) -> {
+            int timeStamp1 = Integer.parseInt(message1.split(" ")[1]);
+            int timeStamp2 = Integer.parseInt(message2.split(" ")[1]);
+
+            // prioritize time stamp by lower first
+            if (timeStamp1 != timeStamp2) {
+                return Integer.compare(timeStamp1, timeStamp2);
+            }
+            // Tie-breaker - then organize by player name
+            String player1 = message1.split(" ")[2];
+            String player2 = message2.split(" ")[2];
+            return player1.compareTo(player2);
+        });
+    }
+
     private static void enableDataOutputFromClient(Socket connectionSocket) {
         try {
             DataOutputStream outputStream = new DataOutputStream(
                     connectionSocket.getOutputStream()
             );
-            System.out.println("[client connected to Server from IP: " + connectionSocket.getInetAddress() + "]");
+            System.out.println("[client connected to server.Server from IP: " + connectionSocket.getInetAddress() + "]");
             clientSockets.put(connectionSocket, outputStream);
 
             // Write all existing players to new client
             for (Player currentPlayer : players.values()) {
                 String addPlayerMessage = messageFormatter.addPlayerMessage(
-                        currentPlayer.name,
-                        currentPlayer.xpos,
-                        currentPlayer.ypos,
-                        currentPlayer.direction
+                        currentPlayer.getName(),
+                        currentPlayer.getXpos(),
+                        currentPlayer.getYpos(),
+                        currentPlayer.getDirection()
                 );
                 outputStream.writeBytes(addPlayerMessage + "\n"); // <- send only to new client
             }
@@ -69,35 +97,37 @@ public class Server {
                     return;
                 }
 
-                String[] messageFormat = messageFromClient.trim().split(" ");
-                String messageType = messageFormat[0];
-                String playerName = messageFormat[1];
+                receivedRequestQueue.add(messageFromClient);
 
-                switch (messageType) {
-                    case "move_player" -> {
-                        int xDirectionMove = Integer.parseInt(messageFormat[2]);
-                        int yDirectionMove = Integer.parseInt(messageFormat[3]);
-                        String newDirection = messageFormat[4];
-
-                        updatePlayerPosition(playerName, xDirectionMove, yDirectionMove, newDirection);
-                    }
-                    case "add_player" -> {
-                        int xPosition = Integer.parseInt(messageFormat[2]);
-                        int yPosition = Integer.parseInt(messageFormat[3]);
-                        String direction = messageFormat[4];
-
-                        addNewPlayer(playerName, xPosition, yPosition, direction);
-                    }
-                    case "update_player_points" -> {
-                        int pointChange = Integer.parseInt(messageFormat[2]);
-                        updatePlayerPoints(playerName, pointChange);
-                    }
-                }
-                writeToAllClients(messageFromClient);
+                processRequestQueue();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void processRequestQueue () {
+        while (!receivedRequestQueue.isEmpty()) {
+            // get next received request from queue
+            String receivedMessageFromClient = receivedRequestQueue.poll();
+
+            // format message into string array
+            String[] requestMessageFormat = receivedMessageFromClient.trim().split(" ");
+
+            // Update global time stamp
+            int requestTimeStamp = Integer.parseInt(requestMessageFormat[1]);
+            updateGlobalTimeStamp(requestTimeStamp);
+
+            // process the request message - update player
+            processRequestMessage(requestMessageFormat);
+
+            // reply to all clients
+            writeToAllClients(receivedMessageFromClient);
+        }
+    }
+
+    private static void updateGlobalTimeStamp(int requestTimeStamp) {
+        globalTimeStamp = Math.max(globalTimeStamp, requestTimeStamp);
     }
 
     private static void writeToAllClients(String messageFromClient){
@@ -112,16 +142,42 @@ public class Server {
         });
     }
 
+    // process message
+    private static void processRequestMessage (String[] messageFormat) {
+        String messageType = messageFormat[2];
+        String playerName = messageFormat[3];
+
+        switch (messageType) {
+            case "move_player" -> {
+                int xDirectionMove = Integer.parseInt(messageFormat[4]);
+                int yDirectionMove = Integer.parseInt(messageFormat[5]);
+                String newDirection = messageFormat[6];
+
+                updatePlayerPosition(playerName, xDirectionMove, yDirectionMove, newDirection);
+            }
+            case "add_player" -> {
+                int xPosition = Integer.parseInt(messageFormat[4]);
+                int yPosition = Integer.parseInt(messageFormat[5]);
+                String direction = messageFormat[6];
+
+                addNewPlayer(playerName, xPosition, yPosition, direction);
+            }
+            case "update_player_points" -> {
+                int pointChange = Integer.parseInt(messageFormat[4]);
+                updatePlayerPoints(playerName, pointChange);
+            }
+        }
+    }
+
     // Player logic
     private static void updatePlayerPosition (String playerName, int xDirectionMove, int yDirectionMove, String newDirection) {
         players.forEach((currentPlayerName, player) -> {
             if (currentPlayerName.equals(playerName)) {
-                player.setXpos(
-                        player.xpos += xDirectionMove
-                );
-                player.setYpos(
-                        player.ypos += yDirectionMove
-                );
+                int newXPosition = player.getXpos() + xDirectionMove;
+                int newYPosition = player.getYpos() + yDirectionMove;
+
+                player.setXpos(newXPosition);
+                player.setYpos(newYPosition);
                 player.setDirection(newDirection);
             }
         });
