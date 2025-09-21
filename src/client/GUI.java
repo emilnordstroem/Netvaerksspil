@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -113,7 +114,8 @@ public class GUI extends Application {
 		// Wait until entered playername
 		String inputPlayerName = dialogElement.showAndWait().get();
 		// setup me player object
-		me = new Player(inputPlayerName, 9, 4, "up");
+		int[] startPosition = getStartPosition();
+		me = new Player(inputPlayerName, startPosition[0], startPosition[1], "up");
 	}
 
 	private void establishTCPConnection() {
@@ -220,7 +222,6 @@ public class GUI extends Application {
 			}
 		});
 	}
-
 
 	private void writeToServer(String messageToServer){
 		try {
@@ -406,6 +407,17 @@ public class GUI extends Application {
 			}
 		}
 		scoreList.setText(getScoreList());
+	}
+
+	public int[] getStartPosition(){
+		int startXPosition = new Random().nextInt(0, size);
+		int startYPosition = new Random().nextInt(0, size);
+
+		while (board[startYPosition].charAt(startXPosition) == 'w') {
+			startXPosition = new Random().nextInt(0, size);
+			startYPosition = new Random().nextInt(0, size);
+		}
+		return new int[]{startXPosition, startYPosition};
 	}
 
 	public String getScoreList() {
