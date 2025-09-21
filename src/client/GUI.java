@@ -5,9 +5,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -168,11 +166,11 @@ public class GUI extends Application {
 		hero_down   = new Image(getClass().getResourceAsStream("Image/heroDown.png"),size,size,false,false);
 
 		fire_horizontal = new Image(getClass().getResourceAsStream("Image/fireHorizontal.png"),size,size,false,false);
-		fire_right = new Image(getClass().getResourceAsStream("Image/fireRight.png"),size,size,false,false);
-		fire_left = new Image(getClass().getResourceAsStream("Image/fireLeft.png"),size,size,false,false);
+		fire_right = new Image(getClass().getResourceAsStream("Image/fireLeft.png"),size,size,false,false);
+		fire_left = new Image(getClass().getResourceAsStream("Image/fireRight.png"),size,size,false,false);
 		fire_vertical = new Image(getClass().getResourceAsStream("Image/fireVertical.png"),size,size,false,false);
-		fire_up = new Image(getClass().getResourceAsStream("Image/fireUp.png"),size,size,false,false);
-		fire_down = new Image(getClass().getResourceAsStream("Image/fireDown.png"),size,size,false,false);
+		fire_up = new Image(getClass().getResourceAsStream("Image/fireDown.png"),size,size,false,false);
+		fire_down = new Image(getClass().getResourceAsStream("Image/fireUp.png"),size,size,false,false);
 
 		fields = new Label[20][20];
 		try {
@@ -450,9 +448,72 @@ public class GUI extends Application {
 	}
 
 	public void shotFired (String playerName, int xDirection, int yDirection, String direction) {
+		Player shootingPlayer = null;
+		for (Player currentPlayer : players) {
+			if (currentPlayer.getName().equals(playerName)) {
+				shootingPlayer = currentPlayer;
+			}
+		}
+		if (shootingPlayer == null) {
+			return;
+		}
 
+		Stack<BoardPointer> positionsImpactedByShot = new Stack<>();
+		int currentShotXPosition = shootingPlayer.getXpos() + xDirection;
+		int currentShotYPosition = shootingPlayer.getYpos() + yDirection;
 
+		while (board[currentShotYPosition].charAt(currentShotXPosition) != 'w') {
+			positionsImpactedByShot.push(
+					new BoardPointer(
+							currentShotXPosition,
+							currentShotYPosition
+					)
+			);
 
+			Player playerAtCurrentShotPosition = getPlayerAt(
+					currentShotXPosition,
+					currentShotYPosition
+			);
+			if (playerAtCurrentShotPosition != null) {
+				return;
+			}
+
+			if (direction.equals("left") || direction.equals("right")) {
+				fireDirectionImage(
+						currentShotXPosition,
+						currentShotYPosition,
+						"horizontal"
+				);
+			} else {
+				fireDirectionImage(
+						currentShotXPosition,
+						currentShotYPosition,
+						"vertical"
+				);
+			}
+
+			currentShotXPosition += xDirection;
+			currentShotYPosition += yDirection;
+		}
+
+		// Reset after time duration
+		new Timer().schedule(new TimerTask() {
+			@Override
+			public void run() {
+				Platform.runLater(() -> {
+					resetPositions(positionsImpactedByShot);
+				});
+			}
+		}, 200);
+	}
+
+	private void resetPositions(Stack<BoardPointer> positionsImpactedByShot){
+		positionsImpactedByShot.forEach(pointer -> {
+			floorImage(
+					pointer.getxPosition(),
+					pointer.getyPosition()
+			);
+		});
 	}
 
 	public int[] getStartPosition(){
