@@ -37,6 +37,7 @@ public class GUI extends Application {
 	public static Image image_floor;
 	public static Image image_wall;
 	public static Image hero_right,hero_left,hero_up,hero_down;
+	public static Image fire_horizontal, fire_right, fire_left, fire_vertical, fire_up, fire_down;
 
 	private final MessageFormatter messageFormatter = new MessageFormatter();
 	public static Player me;
@@ -166,6 +167,13 @@ public class GUI extends Application {
 		hero_up     = new Image(getClass().getResourceAsStream("Image/heroUp.png"),size,size,false,false);
 		hero_down   = new Image(getClass().getResourceAsStream("Image/heroDown.png"),size,size,false,false);
 
+		fire_horizontal = new Image(getClass().getResourceAsStream("Image/fireHorizontal.png"),size,size,false,false);
+		fire_right = new Image(getClass().getResourceAsStream("Image/fireRight.png"),size,size,false,false);
+		fire_left = new Image(getClass().getResourceAsStream("Image/fireLeft.png"),size,size,false,false);
+		fire_vertical = new Image(getClass().getResourceAsStream("Image/fireVertical.png"),size,size,false,false);
+		fire_up = new Image(getClass().getResourceAsStream("Image/fireUp.png"),size,size,false,false);
+		fire_down = new Image(getClass().getResourceAsStream("Image/fireDown.png"),size,size,false,false);
+
 		fields = new Label[20][20];
 		try {
 			for (int j=0; j<20; j++) {
@@ -218,11 +226,29 @@ public class GUI extends Application {
 				case RIGHT:
 					writeToServer(messageFormatter.movePlayerMessage(me.getName(), +1, 0, "right"));
 					break;
+				case SPACE:
+					System.out.println("You pressed SPACE");
+					switch (me.getDirection()) {
+						case "up":
+							writeToServer(messageFormatter.shotFired(me.getName(),0, -1, me.getDirection()));
+							break;
+						case "left":
+							writeToServer(messageFormatter.shotFired(me.getName(), -1, 0, me.getDirection()));
+							break;
+						case "right":
+							writeToServer(messageFormatter.shotFired(me.getName(), +1, 0, me.getDirection()));
+							break;
+						case "down":
+							writeToServer(messageFormatter.shotFired(me.getName(), 0, +1, me.getDirection()));
+							break;
+					}
+					break;
 				default: break;
 			}
 		});
 	}
 
+	// Server communication
 	private void writeToServer(String messageToServer){
 		try {
 			// increment local timestamp
@@ -291,6 +317,20 @@ public class GUI extends Application {
 									pointChange
 							);
 						});
+						break;
+					case "shot_fired":
+						int xDirection = Integer.parseInt(messageFormat[4]);
+						int yDirection = Integer.parseInt(messageFormat[5]);
+						String shotDirection = messageFormat[6];
+						Platform.runLater(() -> {
+							shotFired(
+									playerName,
+									xDirection,
+									yDirection,
+									shotDirection
+							);
+						});
+						break;
 					default: break;
 				}
 
@@ -304,6 +344,7 @@ public class GUI extends Application {
 		localTimeStamp = Math.max(localTimeStamp, receivedTimeStamp);
 	}
 
+	// Game Mechanics
 	private void settingUpNewPlayer(String name, int xPosition, int yPosition, String direction){
 		for (Player player : players) {
 			if (player.getName().equals(name)) { // already exists, just skip (avoid duplicates)
@@ -327,7 +368,6 @@ public class GUI extends Application {
 		fields[xPosition][yPosition].setGraphic(new ImageView(hero_up));
 	}
 
-	// Game Mechanics
 	public void playerMoved(String playerName, int delta_x, int delta_y, String direction) {
 		Player playerToMoved = null;
 		for (Player player : players) {
@@ -375,7 +415,7 @@ public class GUI extends Application {
 						)
 				);
 
-				fields[currentXPosition][currentYPosition].setGraphic(new ImageView(image_floor));
+				floorImage(currentXPosition, currentYPosition);
 				currentXPosition += delta_x;
 				currentYPosition += delta_y;
 
@@ -409,6 +449,12 @@ public class GUI extends Application {
 		scoreList.setText(getScoreList());
 	}
 
+	public void shotFired (String playerName, int xDirection, int yDirection, String direction) {
+
+
+
+	}
+
 	public int[] getStartPosition(){
 		int startXPosition = new Random().nextInt(0, size);
 		int startYPosition = new Random().nextInt(0, size);
@@ -437,6 +483,32 @@ public class GUI extends Application {
 			}
 		}
 		return null;
+	}
+
+	// Set images and animations
+	public void floorImage (int xPosition, int yPosition) {
+		fields[xPosition][yPosition].setGraphic(new ImageView(image_floor));
+	}
+
+	public void fireDirectionImage (int xPosition, int yPosition, String direction) {
+		if (direction.equals("horizontal")) {
+			fields[xPosition][yPosition].setGraphic(new ImageView(fire_horizontal));
+		};
+		if (direction.equals("right")) {
+			fields[xPosition][yPosition].setGraphic(new ImageView(fire_right));
+		};
+		if (direction.equals("left")) {
+			fields[xPosition][yPosition].setGraphic(new ImageView(fire_left));
+		};
+		if (direction.equals("vertical")) {
+			fields[xPosition][yPosition].setGraphic(new ImageView(fire_vertical));
+		};
+		if (direction.equals("up")) {
+			fields[xPosition][yPosition].setGraphic(new ImageView(fire_up));
+		};
+		if (direction.equals("down")) {
+			fields[xPosition][yPosition].setGraphic(new ImageView(fire_down));
+		};
 	}
 	
 }

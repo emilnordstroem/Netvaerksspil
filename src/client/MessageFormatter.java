@@ -44,4 +44,13 @@ public class MessageFormatter {
         );
     }
 
+    public String shotFired (String playerName, int xDirectionMove, int yDirectionMove, String shotDirection) {
+        return String.format("shot_fired %s %d %d %s",
+                playerName,
+                xDirectionMove,
+                yDirectionMove,
+                shotDirection
+        );
+    }
+
 }
