@@ -516,10 +516,13 @@ public class GUI extends Application {
 
 	private void resetPositions(List<BoardPointer> positionsImpactedByShot){
 		positionsImpactedByShot.forEach(pointer -> {
-			floorImage(
-					pointer.getxPosition(),
-					pointer.getyPosition()
-			);
+			Player playerAtPosition = getPlayerAt(pointer.getxPosition(), pointer.getyPosition());
+			if (playerAtPosition == null) {
+				floorImage(
+						pointer.getxPosition(),
+						pointer.getyPosition()
+				);
+			}
 		});
 	}
 
