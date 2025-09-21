@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.reflect.Array;
 import java.net.Socket;
 import java.util.*;
 
@@ -508,13 +507,13 @@ public class GUI extends Application {
 			@Override
 			public void run() {
 				Platform.runLater(() -> {
-					resetPositions(positionsImpactedByShot);
+					resetFieldsImpactedByShot(positionsImpactedByShot);
 				});
 			}
 		}, 300);
 	}
 
-	private void resetPositions(List<BoardPointer> positionsImpactedByShot){
+	private void resetFieldsImpactedByShot(List<BoardPointer> positionsImpactedByShot){
 		positionsImpactedByShot.forEach(pointer -> {
 			Player playerAtPosition = getPlayerAt(pointer.getxPosition(), pointer.getyPosition());
 			if (playerAtPosition == null) {
