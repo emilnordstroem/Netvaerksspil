@@ -99,9 +99,6 @@ public class GUI extends Application {
 		// handle incoming instructions
 		Thread readThread = new Thread(() -> readFromServer());
 		readThread.start();
-
-		// Setting up standard players
-//		settingUpStandardPlayers();
 	}
 
 	private void initiateSetup(){
@@ -329,6 +326,17 @@ public class GUI extends Application {
 							);
 						});
 						break;
+					case "player_hit_by_shot":
+						int newXPosition = Integer.parseInt(messageFormat[4]);
+						int newYPosition = Integer.parseInt(messageFormat[5]);
+						Platform.runLater(() -> {
+							updatePlayerPosition(
+									playerName,
+									newXPosition,
+									newYPosition
+							);
+						});
+						break;
 					default: break;
 				}
 
@@ -495,6 +503,26 @@ public class GUI extends Application {
 					currentShotYPosition
 			);
 			if (playerAtCurrentShotPosition != null) {
+				int[] newPosition = getStartPosition();
+				writeToServer(
+						messageFormatter.playerHitByShot(
+								playerAtCurrentShotPosition.getName(),
+								newPosition[0],
+								newPosition[1]
+						)
+				);
+				writeToServer(
+						messageFormatter.updatePlayerPoint(
+								me.getName(),
+								+50
+						)
+				);
+				writeToServer(
+						messageFormatter.updatePlayerPoint(
+								playerAtCurrentShotPosition.getName(),
+								-50
+						)
+				);
 				return;
 			}
 
@@ -524,6 +552,16 @@ public class GUI extends Application {
 			}
 		});
 	}
+
+	private void updatePlayerPosition (String playerName, int newXPosition, int newYPosition) {
+		players.forEach(currentPlayer -> {
+			if (currentPlayer.getName().equals(playerName)) {
+				currentPlayer.setXpos(newXPosition);
+				currentPlayer.setYpos(newYPosition);
+			}
+		});
+	}
+
 
 	public int[] getStartPosition(){
 		int startXPosition = new Random().nextInt(0, size);

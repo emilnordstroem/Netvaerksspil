@@ -165,6 +165,9 @@ public class Server {
                 int pointChange = Integer.parseInt(messageFormat[4]);
                 updatePlayerPoints(playerName, pointChange);
             }
+            case "player_hit_by_shot" -> {
+
+            }
         }
     }
 
@@ -196,6 +199,15 @@ public class Server {
         players.forEach((currentPlayerName, player) -> {
             if (currentPlayerName.equals(playerName)) {
                 player.addPoints(pointChange);
+            }
+        });
+    }
+
+    private static void updatePlayerPosition (String playerName, int xDirectionMove, int yDirectionMove) {
+        players.forEach((currentPlayerName, player) -> {
+            if (currentPlayerName.equals(playerName)) {
+                player.setXpos(xDirectionMove);
+                player.setYpos(yDirectionMove);
             }
         });
     }

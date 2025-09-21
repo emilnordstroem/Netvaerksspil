@@ -39,17 +39,25 @@ public class MessageFormatter {
 
     public String updatePlayerPoint (String playerName, int pointChange) {
         return String.format("update_player_points %s %d",
-                playerName,
+                playerName.trim().replace(" ", ""),
                 pointChange
         );
     }
 
     public String shotFired (String playerName, int xDirectionMove, int yDirectionMove, String shotDirection) {
         return String.format("shot_fired %s %d %d %s",
-                playerName,
+                playerName.trim().replace(" ", ""),
                 xDirectionMove,
                 yDirectionMove,
                 shotDirection
+        );
+    }
+
+    public String playerHitByShot (String playerName, int xPosition, int yPosition) {
+        return String.format("player_hit_by_shot %s %d %d",
+                playerName,
+                xPosition,
+                yPosition
         );
     }
 
