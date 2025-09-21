@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Array;
 import java.net.Socket;
 import java.util.*;
 
@@ -458,17 +459,37 @@ public class GUI extends Application {
 			return;
 		}
 
-		Stack<BoardPointer> positionsImpactedByShot = new Stack<>();
+		List<BoardPointer> positionsImpactedByShot = new ArrayList<>();
 		int currentShotXPosition = shootingPlayer.getXpos() + xDirection;
 		int currentShotYPosition = shootingPlayer.getYpos() + yDirection;
 
 		while (board[currentShotYPosition].charAt(currentShotXPosition) != 'w') {
-			positionsImpactedByShot.push(
+			if (!positionsImpactedByShot.isEmpty()) {
+				BoardPointer previousPointer = positionsImpactedByShot.getLast();
+				int xPosition = previousPointer.getxPosition();
+				int yPosition = previousPointer.getyPosition();
+				if (direction.equals("left") || direction.equals("right")) {
+					fireDirectionImage(
+							xPosition,
+							yPosition,
+							"horizontal"
+					);
+				} else {
+					fireDirectionImage(
+							xPosition,
+							yPosition,
+							"vertical"
+					);
+				}
+			}
+
+			positionsImpactedByShot.add(
 					new BoardPointer(
 							currentShotXPosition,
 							currentShotYPosition
 					)
 			);
+			fireDirectionImage(currentShotXPosition, currentShotYPosition, direction);
 
 			Player playerAtCurrentShotPosition = getPlayerAt(
 					currentShotXPosition,
@@ -476,20 +497,6 @@ public class GUI extends Application {
 			);
 			if (playerAtCurrentShotPosition != null) {
 				return;
-			}
-
-			if (direction.equals("left") || direction.equals("right")) {
-				fireDirectionImage(
-						currentShotXPosition,
-						currentShotYPosition,
-						"horizontal"
-				);
-			} else {
-				fireDirectionImage(
-						currentShotXPosition,
-						currentShotYPosition,
-						"vertical"
-				);
 			}
 
 			currentShotXPosition += xDirection;
@@ -504,10 +511,10 @@ public class GUI extends Application {
 					resetPositions(positionsImpactedByShot);
 				});
 			}
-		}, 200);
+		}, 300);
 	}
 
-	private void resetPositions(Stack<BoardPointer> positionsImpactedByShot){
+	private void resetPositions(List<BoardPointer> positionsImpactedByShot){
 		positionsImpactedByShot.forEach(pointer -> {
 			floorImage(
 					pointer.getxPosition(),
