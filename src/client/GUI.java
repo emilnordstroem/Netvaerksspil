@@ -353,8 +353,18 @@ public class GUI extends Application {
 			Player playerAtNewPosition = getPlayerAt(currentXPosition + delta_x,currentYPosition + delta_y);
 			if (playerAtNewPosition != null) {
 				// This needs to be messages
-				playerToMoved.addPoints(10);
-				playerAtNewPosition.addPoints(-10);
+				writeToServer(
+						messageFormatter.updatePlayerPoint(
+								playerToMoved.getName(),
+								10
+						)
+				);
+				writeToServer(
+						messageFormatter.updatePlayerPoint(
+								playerAtNewPosition.getName(),
+								-10
+						)
+				);
 			} else {
 				// needs to be a message
 				writeToServer(
