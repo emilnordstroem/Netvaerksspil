@@ -1,6 +1,5 @@
 package server;
 
-import com.sun.net.httpserver.Request;
 import models.Player;
 import client.MessageFormatter;
 
@@ -200,6 +199,5 @@ public class Server {
             }
         });
     }
-
 
 }
