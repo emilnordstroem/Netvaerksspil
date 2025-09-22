@@ -13,22 +13,40 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Server {
     private static ServerSocket welcomeSocket;
     private static final MessageFormatter messageFormatter = new MessageFormatter();
     private static Map<Socket, DataOutputStream> clientSockets;
     private static Map<String, Player> players;
-    private static Queue<String> receivedRequestQueue;
-    private static int globalTimeStamp;
+    private static BlockingQueue<String> receivedRequestQueue;
+    private static AtomicInteger globalTimeStamp;
 
     public static void main(String[] args) {
         try {
             welcomeSocket = new ServerSocket(10_000);
-            clientSockets = new HashMap<>();
-            players = new HashMap<>();
+            clientSockets = new ConcurrentHashMap<>();
+            players = new ConcurrentHashMap<>();
             receivedRequestQueue = createRequestQueue();
-            globalTimeStamp = 0;
+            globalTimeStamp = new AtomicInteger(0);
+
+            Thread processRequest = new Thread(() -> {
+                try {
+                    while (true) {
+                        String nextMessageInQueue = receivedRequestQueue.take(); // blocks
+                        processRequestQueue(nextMessageInQueue); // single-threaded processing
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+
+            processRequest.setDaemon(true); // background thread
+            processRequest.start();
 
             while (true) {
                 Socket connectionSocket = welcomeSocket.accept();
@@ -42,16 +60,18 @@ public class Server {
         }
     }
 
-    private static PriorityQueue<String> createRequestQueue () {
-        return new PriorityQueue<>((message1, message2) -> {
+    private static PriorityBlockingQueue<String> createRequestQueue () {
+        // 10 is the initial capacity and will be updated when exeeding
+        return new PriorityBlockingQueue<>(10, (message1, message2) -> {
             int timeStamp1 = Integer.parseInt(message1.split(" ")[1]);
             int timeStamp2 = Integer.parseInt(message2.split(" ")[1]);
 
-            // prioritize time stamp by lower first
+            // Prioritize lower timestamp first
             if (timeStamp1 != timeStamp2) {
                 return Integer.compare(timeStamp1, timeStamp2);
             }
-            // Tie-breaker - then organize by player name
+
+            // Tie-breaker: sort by player name
             String player1 = message1.split(" ")[2];
             String player2 = message2.split(" ")[2];
             return player1.compareTo(player2);
@@ -97,36 +117,33 @@ public class Server {
                 }
 
                 receivedRequestQueue.add(messageFromClient);
-
-                processRequestQueue();
             }
         } catch (IOException e) {
             clientSockets.remove(connectionSocket);
         }
     }
 
-    private static void processRequestQueue () {
-        while (!receivedRequestQueue.isEmpty()) {
-            // get next received request from queue
-            String receivedMessageFromClient = receivedRequestQueue.poll();
-
-            // format message into string array
-            String[] requestMessageFormat = receivedMessageFromClient.trim().split(" ");
-
-            // Update global time stamp
-            int requestTimeStamp = Integer.parseInt(requestMessageFormat[1]);
-            updateGlobalTimeStamp(requestTimeStamp);
-
-            // process the request message - update player
-            processRequestMessage(requestMessageFormat);
-
-            // reply to all clients
-            writeToAllClients(receivedMessageFromClient);
+    private static void processRequestQueue (String receivedMessageFromClient) {
+        if (receivedMessageFromClient == null || receivedMessageFromClient.isBlank()) {
+            return;
         }
+
+        // format message into string array
+        String[] requestMessageFormat = receivedMessageFromClient.trim().split(" ");
+
+        // Update global time stamp
+        int requestTimeStamp = Integer.parseInt(requestMessageFormat[1]);
+        updateGlobalTimeStamp(requestTimeStamp);
+
+        // process the request message - update player
+        processRequestMessage(requestMessageFormat);
+
+        // reply to all clients
+        writeToAllClients(receivedMessageFromClient);
     }
 
     private static void updateGlobalTimeStamp(int requestTimeStamp) {
-        globalTimeStamp = Math.max(globalTimeStamp, requestTimeStamp);
+        globalTimeStamp.updateAndGet(previous -> Math.max(previous, requestTimeStamp));
     }
 
     private static void writeToAllClients(String messageFromClient){

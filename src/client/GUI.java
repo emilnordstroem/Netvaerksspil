@@ -22,7 +22,7 @@ import models.Player;
 
 public class GUI extends Application {
 	private static String host;
-	private static int port = 10_000;
+	private static final int port = 10_000;
 	private static Socket clientSocket;
 	private static DataOutputStream outToServer;
 	private static BufferedReader inFromServer;
