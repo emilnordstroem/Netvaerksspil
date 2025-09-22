@@ -34,7 +34,7 @@ public class GUI extends Application {
 
 	public static Image image_floor;
 	public static Image image_wall;
-	public static Image hero_right,hero_left,hero_up,hero_down;
+	public static Image hero_right, hero_left, hero_up, hero_down;
 	public static Image fire_horizontal, fire_right, fire_left, fire_vertical, fire_up, fire_down;
 
 	private final MessageFormatter messageFormatter = new MessageFormatter();
