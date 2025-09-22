@@ -21,8 +21,8 @@ import javafx.application.Platform;
 import models.Player;
 
 public class GUI extends Application {
-	private static final String host = "localhost";
-	private static final int port = 10_000;
+	private static String host;
+	private static int port = 10_000;
 	private static Socket clientSocket;
 	private static DataOutputStream outToServer;
 	private static BufferedReader inFromServer;
@@ -102,13 +102,20 @@ public class GUI extends Application {
 	}
 
 	private void initiateSetup(){
-		TextInputDialog dialogElement = new TextInputDialog();
-		dialogElement.setTitle("Welcome to the Maze");
-		dialogElement.setHeaderText("You need to take action on one matter before joining the game");
-		dialogElement.setContentText("Please enter a player name:");
+		TextInputDialog connectionSetupDialog = new TextInputDialog();
+
+		connectionSetupDialog.setTitle("Welcome to the Maze");
+		connectionSetupDialog.setHeaderText("To connect, you must enter a Server IP address before connecting");
+		connectionSetupDialog.setContentText("Please enter a valid Server IP:");
+        host = connectionSetupDialog.showAndWait().orElse("localhost");
+
+		connectionSetupDialog = new TextInputDialog();
+		connectionSetupDialog.setTitle("Welcome to the Maze");
+		connectionSetupDialog.setHeaderText("You need to take action on one matter before joining the game");
+		connectionSetupDialog.setContentText("Please enter a player name:");
 
 		// Wait until entered playername
-		String inputPlayerName = dialogElement.showAndWait().get();
+		String inputPlayerName = connectionSetupDialog.showAndWait().get();
 		// setup me player object
 		int[] startPosition = getStartPosition();
 		me = new Player(inputPlayerName, startPosition[0], startPosition[1], "up");

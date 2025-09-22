@@ -101,7 +101,7 @@ public class Server {
                 processRequestQueue();
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            clientSockets.remove(connectionSocket);
         }
     }
 
@@ -166,7 +166,9 @@ public class Server {
                 updatePlayerPoints(playerName, pointChange);
             }
             case "player_hit_by_shot" -> {
-
+                int newXPosition = Integer.parseInt(messageFormat[4]);
+                int newYPosition = Integer.parseInt(messageFormat[5]);
+                updatePlayerPosition(playerName, newXPosition, newYPosition);
             }
         }
     }
@@ -203,11 +205,11 @@ public class Server {
         });
     }
 
-    private static void updatePlayerPosition (String playerName, int xDirectionMove, int yDirectionMove) {
+    private static void updatePlayerPosition (String playerName, int newXPosition, int newYPosition) {
         players.forEach((currentPlayerName, player) -> {
             if (currentPlayerName.equals(playerName)) {
-                player.setXpos(xDirectionMove);
-                player.setYpos(yDirectionMove);
+                player.setXpos(newXPosition);
+                player.setYpos(newYPosition);
             }
         });
     }
