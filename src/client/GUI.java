@@ -271,6 +271,9 @@ public class GUI extends Application {
 			try {
 				String messageFromServer = inFromServer.readLine();
 				System.out.println("received by server: " + messageFromServer);
+				if (messageFromServer == null || messageFromServer.isEmpty()) {
+					return;
+				}
 				String[] messageFormat = messageFromServer.trim().split(" ");
 
 				int receivedTimeStamp = Integer.parseInt(messageFormat[1]);
