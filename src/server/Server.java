@@ -119,6 +119,11 @@ public class Server {
                 receivedRequestQueue.add(messageFromClient);
             }
         } catch (IOException e) {
+            try {
+                clientSockets.get(connectionSocket).close();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
             clientSockets.remove(connectionSocket);
         }
     }
