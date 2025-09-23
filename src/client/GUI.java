@@ -392,7 +392,7 @@ public class GUI extends Application {
                 direction,
                 color
         );
-        if (name.equals(me.getName())) {
+        if (name.equals(me.getName()) || me == null) {
             me = newPlayer;
         }
         players.add(newPlayer);
