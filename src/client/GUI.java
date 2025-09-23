@@ -52,7 +52,7 @@ public class GUI extends Application {
 			"w  w               w",
 			"w w w w w w w  w  ww",
 			"w w     www w  w  ww",
-			"w w     w w w  w  ww",
+			"w w     www w  w  ww",
 			"w   w w  w  w  w   w",
 			"w     w  w  w  w   w",
 			"w ww ww        w  ww",
@@ -548,7 +548,7 @@ public class GUI extends Application {
 					resetFieldsImpactedByShot(positionsImpactedByShot);
 				});
 			}
-		}, 300);
+		}, 200);
 	}
 
 	private void resetFieldsImpactedByShot(List<BoardPointer> positionsImpactedByShot){
@@ -574,12 +574,12 @@ public class GUI extends Application {
 
 
 	public int[] getStartPosition(){
-		int startXPosition = new Random().nextInt(0, size);
-		int startYPosition = new Random().nextInt(0, size);
+		int startXPosition = new Random().nextInt(1, size - 1);
+		int startYPosition = new Random().nextInt(1, size - 1);
 
 		while (board[startYPosition].charAt(startXPosition) == 'w') {
-			startXPosition = new Random().nextInt(0, size);
-			startYPosition = new Random().nextInt(0, size);
+			startXPosition = new Random().nextInt(1, size - 1);
+			startYPosition = new Random().nextInt(1, size - 1);
 		}
 		return new int[]{startXPosition, startYPosition};
 	}
