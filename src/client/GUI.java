@@ -36,7 +36,6 @@ public class GUI extends Application {
 
     public static Image image_floor;
     public static Image image_wall;
-    public static Image hero_right, hero_left, hero_up, hero_down;
     public static Image fire_horizontal, fire_right, fire_left, fire_vertical, fire_up, fire_down;
     public static Image fireWall_right, fireWall_left, fireWall_up, fireWall_down;
 
@@ -167,11 +166,6 @@ public class GUI extends Application {
 
         image_wall = new Image(getClass().getResourceAsStream("Image/wall4.png"), size, size, false, false);
         image_floor = new Image(getClass().getResourceAsStream("Image/floor1.png"), size, size, false, false);
-
-        hero_right = new Image(getClass().getResourceAsStream("Image/whiteHeroRight.png"), size, size, false, false);
-        hero_left = new Image(getClass().getResourceAsStream("Image/whiteHeroLeft.png"), size, size, false, false);
-        hero_up = new Image(getClass().getResourceAsStream("Image/whiteHeroUp.png"), size, size, false, false);
-        hero_down = new Image(getClass().getResourceAsStream("Image/whiteHeroDown.png"), size, size, false, false);
 
         fire_horizontal = new Image(getClass().getResourceAsStream("Image/fireHorizontal.png"), size, size, false, false);
         fire_right = new Image(getClass().getResourceAsStream("Image/fireRight.png"), size, size, false, false);
@@ -524,13 +518,15 @@ public class GUI extends Application {
                     fireDirectionImage(
                             xPosition,
                             yPosition,
-                            "horizontal"
+                            "horizontal",
+                            false
                     );
                 } else {
                     fireDirectionImage(
                             xPosition,
                             yPosition,
-                            "vertical"
+                            "vertical",
+                            false
                     );
                 }
             }
@@ -541,13 +537,15 @@ public class GUI extends Application {
                             currentShotYPosition
                     )
             );
-            fireDirectionImage(currentShotXPosition, currentShotYPosition, direction);
+            fireDirectionImage(currentShotXPosition, currentShotYPosition, direction,false);
 
             Player playerAtCurrentShotPosition = getPlayerAt(
                     currentShotXPosition,
                     currentShotYPosition
             );
             if (playerAtCurrentShotPosition != null) {
+                fireDirectionImage(currentShotXPosition, currentShotYPosition, direction, true);
+
                 int[] newPosition = getStartPosition();
                 writeToServer(
                         messageFormatter.playerHitByShot(
@@ -654,31 +652,25 @@ public class GUI extends Application {
         fields[xPosition][yPosition].setGraphic(new ImageView(image_floor));
     }
 
-    public void fireDirectionImage(int xPosition, int yPosition, String direction) {
-        if (direction.equals("horizontal")) {
-            fields[xPosition][yPosition].setGraphic(new ImageView(fire_horizontal));
+    public void fireDirectionImage(int xPosition, int yPosition, String direction, boolean hitPlayer) {
+        if (hitPlayer) {
+            switch (direction) {
+                case "horizontal" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_horizontal));
+                case "vertical" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_vertical));
+                case "up" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_up));
+                case "down" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_down));
+                case "left" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_left));
+                case "right" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_right));
+            }
+        } else {
+            switch (direction) {
+                case "horizontal" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_horizontal));
+                case "vertical" -> fields[xPosition][yPosition].setGraphic(new ImageView(fire_vertical));
+                case "up" -> fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_up));
+                case "down" -> fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_down));
+                case "left" -> fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_left));
+                case "right" -> fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_right));
+            }
         }
-        ;
-        if (direction.equals("right")) {
-            fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_right));
-        }
-        ;
-        if (direction.equals("left")) {
-            fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_left));
-        }
-        ;
-        if (direction.equals("vertical")) {
-            fields[xPosition][yPosition].setGraphic(new ImageView(fire_vertical));
-        }
-        ;
-        if (direction.equals("up")) {
-            fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_up));
-        }
-        ;
-        if (direction.equals("down")) {
-            fields[xPosition][yPosition].setGraphic(new ImageView(fireWall_down));
-        }
-        ;
     }
-
 }
