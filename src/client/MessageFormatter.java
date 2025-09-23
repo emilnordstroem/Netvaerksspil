@@ -4,6 +4,7 @@ public class MessageFormatter {
 
     public MessageFormatter() {}
 
+    // Wrapper metode til message
     public String requestMessage (int timeStamp, String message) {
         return String.format("REQUEST %d %s",
                 timeStamp,
