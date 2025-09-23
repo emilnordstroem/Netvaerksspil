@@ -42,6 +42,9 @@ public class GUI extends Application {
 	public static Player me;
 	public static List<Player> players = new ArrayList<>();
 
+	private final int shootingTimeOut = 500; // milliseconds
+	private final Stack<Long> previousShot = new Stack<>();
+
 	private Label[][] fields;
 	private TextArea scoreList;
 	
@@ -236,7 +239,15 @@ public class GUI extends Application {
 					writeToServer(messageFormatter.movePlayerMessage(me.getName(), +1, 0, "right"));
 					break;
 				case SPACE:
-					System.out.println("You pressed SPACE");
+					long currentTimeInMilliseconds = System.currentTimeMillis();
+					if (!previousShot.isEmpty()) {
+						long previousTimeInMilliseconds = previousShot.peek();
+						if (currentTimeInMilliseconds - previousTimeInMilliseconds < shootingTimeOut) {
+							return;
+						}
+						previousShot.pop();
+					}
+					previousShot.push(currentTimeInMilliseconds);
 					switch (me.getDirection()) {
 						case "up":
 							writeToServer(messageFormatter.shotFired(me.getName(),0, -1, me.getDirection()));
@@ -540,7 +551,7 @@ public class GUI extends Application {
 								-50
 						)
 				);
-				return;
+				break;
 			}
 
 			currentShotXPosition += xDirection;
