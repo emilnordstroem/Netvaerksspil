@@ -94,7 +94,7 @@ public class Server {
                         currentPlayer.getYpos(),
                         currentPlayer.getDirection()
                 );
-                outputStream.writeBytes(addPlayerMessage + "\n"); // <- send only to new client
+                outputStream.writeBytes(messageFormatter.requestMessage(globalTimeStamp.get(), addPlayerMessage) + "\n"); // <- send only to new client
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
