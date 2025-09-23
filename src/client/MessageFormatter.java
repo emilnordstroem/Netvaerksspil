@@ -21,12 +21,13 @@ public class MessageFormatter {
         );
     }
 
-    public String addPlayerMessage (String playerName, int currentXPosition, int currentYPosition, String currentPosition) {
-        return String.format("add_player %s %d %d %s",
+    public String addPlayerMessage (String playerName, int currentXPosition, int currentYPosition, String currentPosition, String color) {
+        return String.format("add_player %s %d %d %s %s",
                 playerName.trim().replace(" ", ""),
                 currentXPosition,
                 currentYPosition,
-                currentPosition
+                currentPosition,
+                color
         );
     }
 

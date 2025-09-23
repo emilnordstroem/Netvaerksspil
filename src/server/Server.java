@@ -25,6 +25,8 @@ public class Server {
     private static Map<String, Player> players;
     private static BlockingQueue<String> receivedRequestQueue;
     private static AtomicInteger globalTimeStamp;
+    private static final String[] colors = {"white", "green", "red", "blue", "yellow"};
+    private static int nextColorIndex = 0;
 
     public static void main(String[] args) {
         try {
@@ -60,7 +62,7 @@ public class Server {
         }
     }
 
-    private static PriorityBlockingQueue<String> createRequestQueue () {
+    private static PriorityBlockingQueue<String> createRequestQueue() {
         // 10 is the initial capacity and will be updated when exeeding
         return new PriorityBlockingQueue<>(10, (message1, message2) -> {
             int timeStamp1 = Integer.parseInt(message1.split(" ")[1]);
@@ -92,7 +94,8 @@ public class Server {
                         currentPlayer.getName(),
                         currentPlayer.getXpos(),
                         currentPlayer.getYpos(),
-                        currentPlayer.getDirection()
+                        currentPlayer.getDirection(),
+                        currentPlayer.getColor()
                 );
                 outputStream.writeBytes(messageFormatter.requestMessage(globalTimeStamp.get(), addPlayerMessage) + "\n"); // <- send only to new client
             }
@@ -128,30 +131,33 @@ public class Server {
         }
     }
 
-    private static void processRequestQueue (String receivedMessageFromClient) {
+    private static void processRequestQueue(String receivedMessageFromClient) {
         if (receivedMessageFromClient == null || receivedMessageFromClient.isBlank()) {
             return;
         }
 
         // format message into string array
-        String[] requestMessageFormat = receivedMessageFromClient.trim().split(" ");
+        String[] requestMessageFormat = receivedMessageFromClient.trim().split("\\s+");
 
         // Update global time stamp
         int requestTimeStamp = Integer.parseInt(requestMessageFormat[1]);
         updateGlobalTimeStamp(requestTimeStamp);
 
         // process the request message - update player
+        String messageType = requestMessageFormat[2];
         processRequestMessage(requestMessageFormat);
 
-        // reply to all clients
-        writeToAllClients(receivedMessageFromClient);
+        // reply to all clients, unless add player
+        if (!messageType.equals("add_player")) {
+            writeToAllClients(receivedMessageFromClient);
+        }
     }
 
     private static void updateGlobalTimeStamp(int requestTimeStamp) {
         globalTimeStamp.updateAndGet(previous -> Math.max(previous, requestTimeStamp));
     }
 
-    private static void writeToAllClients(String messageFromClient){
+    private static void writeToAllClients(String messageFromClient) {
         String messageToClients = messageFromClient.trim();
         clientSockets.forEach((socket, outputStream) -> {
             try {
@@ -164,7 +170,7 @@ public class Server {
     }
 
     // process message
-    private static void processRequestMessage (String[] messageFormat) {
+    private static void processRequestMessage(String[] messageFormat) {
         String messageType = messageFormat[2];
         String playerName = messageFormat[3];
 
@@ -180,8 +186,14 @@ public class Server {
                 int xPosition = Integer.parseInt(messageFormat[4]);
                 int yPosition = Integer.parseInt(messageFormat[5]);
                 String direction = messageFormat[6];
+                String color = assignColor();
 
-                addNewPlayer(playerName, xPosition, yPosition, direction);
+                addNewPlayer(playerName, xPosition, yPosition, direction, color);
+
+                String addPlayerMessage = messageFormatter.addPlayerMessage(
+                        playerName, xPosition, yPosition, direction, color
+                );
+                writeToAllClients(messageFormatter.requestMessage(globalTimeStamp.get(), addPlayerMessage));
             }
             case "update_player_points" -> {
                 int pointChange = Integer.parseInt(messageFormat[4]);
@@ -196,7 +208,7 @@ public class Server {
     }
 
     // Player logic
-    private static void updatePlayerPosition (String playerName, int xDirectionMove, int yDirectionMove, String newDirection) {
+    private static void updatePlayerPosition(String playerName, int xDirectionMove, int yDirectionMove, String newDirection) {
         players.forEach((currentPlayerName, player) -> {
             if (currentPlayerName.equals(playerName)) {
                 int newXPosition = player.getXpos() + xDirectionMove;
@@ -209,17 +221,18 @@ public class Server {
         });
     }
 
-    private static void addNewPlayer (String playerName, int xPosition, int yPosition, String direction) {
+    private static void addNewPlayer(String playerName, int xPosition, int yPosition, String direction, String color) {
         Player newPlayer = new Player(
                 playerName,
                 xPosition,
                 yPosition,
-                direction
+                direction,
+                color
         );
         players.put(playerName, newPlayer);
     }
 
-    private static void updatePlayerPoints (String playerName, int pointChange) {
+    private static void updatePlayerPoints(String playerName, int pointChange) {
         players.forEach((currentPlayerName, player) -> {
             if (currentPlayerName.equals(playerName)) {
                 player.addPoints(pointChange);
@@ -227,7 +240,7 @@ public class Server {
         });
     }
 
-    private static void updatePlayerPosition (String playerName, int newXPosition, int newYPosition) {
+    private static void updatePlayerPosition(String playerName, int newXPosition, int newYPosition) {
         players.forEach((currentPlayerName, player) -> {
             if (currentPlayerName.equals(playerName)) {
                 player.setXpos(newXPosition);
@@ -236,4 +249,9 @@ public class Server {
         });
     }
 
+    public static String assignColor() {
+        String color = colors[nextColorIndex % colors.length];
+        nextColorIndex++;
+        return color;
+    }
 }
