@@ -6,13 +6,22 @@ public class Player {
 	private int ypos;
 	private int point;
 	private String direction;
+	private String color;
 
-	public Player(String name, int xpos, int ypos, String direction) {
+	public Player(String name, int xpos, int ypos, String direction, String color) {
 		this.name = name;
 		this.xpos = xpos;
 		this.ypos = ypos;
 		this.direction = direction;
 		this.point = 0;
+		this.color = color;
+	}
+
+	public String getColor() {
+		return color;
+	}
+	public void setColor(String color) {
+		this.color = color;
 	}
 
 	public String getName() {
