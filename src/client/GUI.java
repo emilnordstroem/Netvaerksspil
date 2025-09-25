@@ -44,8 +44,8 @@ public class GUI extends Application {
     public static List<Player> players = new ArrayList<>();
 
     private final int shootingTimeOut = 500; // milliseconds
-	private final Stack<Long> previousShot = new Stack<>();
-  
+    private final Stack<Long> previousShot = new Stack<>();
+
     private Label[][] fields;
     private TextArea scoreList;
     private VBox scoreBoard;
@@ -113,7 +113,7 @@ public class GUI extends Application {
         connectionSetupDialog.setTitle("Welcome to the Maze");
         connectionSetupDialog.setHeaderText("To connect, you must enter a Server IP address before connecting");
         connectionSetupDialog.setContentText("Please enter a valid Server IP:");
-	
+
         host = connectionSetupDialog.showAndWait().orElse("localhost");
 
         connectionSetupDialog = new TextInputDialog();
@@ -236,15 +236,15 @@ public class GUI extends Application {
                     writeToServer(messageFormatter.movePlayerMessage(me.getName(), +1, 0, "right"));
                     break;
                 case SPACE:
-                					long currentTimeInMilliseconds = System.currentTimeMillis();
-if (!previousShot.isEmpty()) {
-						long previousTimeInMilliseconds = previousShot.peek();
-						if (currentTimeInMilliseconds - previousTimeInMilliseconds < shootingTimeOut) {
-							return;
-						}
-						previousShot.pop();
-					}
-					previousShot.push(currentTimeInMilliseconds);
+                    long currentTimeInMilliseconds = System.currentTimeMillis();
+                    if (!previousShot.isEmpty()) {
+                        long previousTimeInMilliseconds = previousShot.peek();
+                        if (currentTimeInMilliseconds - previousTimeInMilliseconds < shootingTimeOut) {
+                            return;
+                        }
+                        previousShot.pop();
+                    }
+                    previousShot.push(currentTimeInMilliseconds);
                     System.out.println("You pressed SPACE");
                     switch (me.getDirection()) {
                         case "up":
@@ -551,7 +551,7 @@ if (!previousShot.isEmpty()) {
                             currentShotYPosition
                     )
             );
-            fireDirectionImage(currentShotXPosition, currentShotYPosition, direction,false);
+            fireDirectionImage(currentShotXPosition, currentShotYPosition, direction, false);
 
             Player playerAtCurrentShotPosition = getPlayerAt(
                     currentShotXPosition,
